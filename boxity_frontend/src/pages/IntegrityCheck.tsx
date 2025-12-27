@@ -250,11 +250,24 @@ export default function IntegrityCheck() {
           : [];
 
         // Extract trust score data with enhanced metadata
+        const parsedAggregateTis =
+          typeof data?.aggregate_tis === "number"
+            ? data.aggregate_tis
+            : Number(data?.aggregate_tis);
+        const parsedConfidence =
+          typeof data?.confidence_overall === "number"
+            ? data.confidence_overall
+            : Number(data?.confidence_overall);
+
         const trustScoreData: TrustScoreData = {
-          aggregate_tis: data?.aggregate_tis || 100,
-          overall_assessment: data?.overall_assessment || "SAFE",
-          confidence_overall: data?.confidence_overall || 0.8,
-          notes: data?.notes || "Analysis completed",
+          aggregate_tis: Number.isFinite(parsedAggregateTis)
+            ? parsedAggregateTis
+            : 100,
+          overall_assessment: data?.overall_assessment ?? "SAFE",
+          confidence_overall: Number.isFinite(parsedConfidence)
+            ? parsedConfidence
+            : 0.8,
+          notes: data?.notes ?? "Analysis completed",
         };
 
         // Log analysis metadata for debugging
@@ -275,9 +288,9 @@ export default function IntegrityCheck() {
           title: "Analysis complete",
           description: `Found ${mapped.length} differences. Trust Score: ${trustScoreData.aggregate_tis}% (${riskLevel})`,
           variant:
-            trustScoreData.aggregate_tis < 40
+            riskLevel === "HIGH RISK"
               ? "destructive"
-              : trustScoreData.aggregate_tis < 80
+              : riskLevel === "MODERATE RISK"
               ? "default"
               : "default",
         });
@@ -730,28 +743,31 @@ export default function IntegrityCheck() {
                             2 *
                             Math.PI *
                             50 *
-                            (1 - trustScore.aggregate_tis / 100)
+                            (1 -
+                              Math.max(
+                                0,
+                                Math.min(100, trustScore.aggregate_tis)
+                              ) /
+                                100)
                           }`}
                           className={
-                            trustScore.aggregate_tis >= 80
+                            String(trustScore.overall_assessment || "")
+                              .toUpperCase()
+                              .includes("SAFE")
                               ? "text-green-500"
-                              : trustScore.aggregate_tis >= 40
+                              : String(trustScore.overall_assessment || "")
+                                  .toUpperCase()
+                                  .includes("MODERATE")
                               ? "text-orange-500"
                               : "text-red-500"
                           }
                           strokeLinecap="round"
                         />
                       </svg>
-                      <div
-                        className={`w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold ${
-                          trustScore.aggregate_tis >= 80
-                            ? "bg-green-500/20 text-green-400 border-3 border-green-500/30"
-                            : trustScore.aggregate_tis >= 40
-                            ? "bg-orange-500/20 text-orange-400 border-3 border-orange-500/30"
-                            : "bg-red-500/20 text-red-400 border-3 border-red-500/30"
-                        }`}
-                      >
-                        {trustScore.aggregate_tis}%
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-foreground">
+                          {Math.max(0, Math.min(100, trustScore.aggregate_tis))}%
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -760,14 +776,20 @@ export default function IntegrityCheck() {
                   <div className="space-y-2">
                     <div
                       className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
-                        trustScore.aggregate_tis >= 80
+                        String(trustScore.overall_assessment || "")
+                          .toUpperCase()
+                          .includes("SAFE")
                           ? "bg-green-500/20 text-green-300 border border-green-500/30"
-                          : trustScore.aggregate_tis >= 40
+                          : String(trustScore.overall_assessment || "")
+                              .toUpperCase()
+                              .includes("MODERATE")
                           ? "bg-orange-500/20 text-orange-300 border border-orange-500/30"
                           : "bg-red-500/20 text-red-300 border border-red-500/30"
                       }`}
                     >
-                      {String(trustScore.overall_assessment || "").toUpperCase().includes("SAFE") ? (
+                      {String(trustScore.overall_assessment || "")
+                        .toUpperCase()
+                        .includes("SAFE") ? (
                         <>
                           <CheckCircle className="w-4 h-4 mr-2" />
                           SAFE - Product integrity maintained
