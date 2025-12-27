@@ -7,7 +7,7 @@ The project simulates end-to-end blockchain-backed logging and verification of p
 
 ## Live Deployment
 
-- **Frontend App:** [https://chain-box-trust.vercel.app/](https://chain-box-trust.vercel.app/)
+- **Frontend App:** [https://boxity.vercel.app/](https://boxity.vercel.app/)
 
 ---
 
@@ -206,3 +206,14 @@ The optimized output is generated in `/dist`.
 - QR codes encode batch metadata in JSON.
 
 ---
+**Integrations & How We Use Them**
+- **Google Gemini**: Primary LLM for summarization, RAG lookups, and QA; backend entrypoint in [boxity_backend/routes/ai.py](boxity_backend/routes/ai.py) and configuration in [boxity_backend/config.py](boxity_backend/config.py).
+<!-- - **Open Router**: LLM routing/proxy that lets us switch providers (Gemini, etc.) without code changes; used by the backend AI layer ([boxity_backend/config.py](boxity_backend/config.py), [boxity_backend/routes/ai.py](boxity_backend/routes/ai.py)). -->
+- **Eleven Labs**: Text-to-speech for playback of verification timelines and notifications; implemented in [app/boxity_mobile/services/tts.ts](app/boxity_mobile/services/tts.ts).
+- **Kiro**: Attestation/identity integration used for signer/actor verification and optional credential checks; integration points are client API flows and backend routes (see [app/boxity_mobile/services/api.ts](app/boxity_mobile/services/api.ts) and backend AI routes).
+- **Insforge**: Image/asset-processing and augmentation provider used by the vision pipeline for image analysis/OCR to save in db and use Auth of it; referenced by [boxity_backend/vision.py](boxity_backend/vision.py).
+- **Solana**: Target blockchain for on-chain proof anchoring; demo currently uses simulated ledger refs, with on-chain integration code in [boxity_frontend/src/lib/web3.ts](boxity_frontend/src/lib/web3.ts).
+- **Requestly**: Developer tool for request mocking/rewriting during local testing—useful for testing API and AI request flows during development.
+
+How they work together
+- Scan/upload image → vision pipeline (Insforge) → event created/hashed → backend logs and optional on-chain anchor (Solana) → summaries/QA served by Google Gemini via Open Router → playback via Eleven Labs; Kiro provides optional identity attestations; Requestly helps devs mock and test flows locally.
