@@ -143,8 +143,8 @@ def call_gemini_ensemble(baseline: Tuple[Optional[bytes], Optional[str]], curren
         "\nCurrent Image (Under Analysis):", {"mime_type": current_mime or "image/jpeg", "data": current_bytes},
     ]
 
-    model_pro = _build_model("gemini-1.5-pro-latest")
-    model_flash = _build_model("gemini-1.5-flash-latest")
+    model_pro = _build_model("gemini-3-flash-preview")
+    model_flash = _build_model("gemini-3-flash-preview")
 
     try:
         r1 = model_pro.generate_content(parts)
