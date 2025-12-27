@@ -214,7 +214,7 @@ export class Web3Service {
   }
 
   // Utility functions
-  async waitForTransaction(tx: ethers.ContractTransactionResponse): Promise<ethers.ContractReceipt | null> {
+  async waitForTransaction(tx: ethers.ContractTransactionResponse): Promise<ethers.TransactionReceipt | null> {
     if (!this.provider) throw new Error('Provider not initialized');
     return await tx.wait();
   }

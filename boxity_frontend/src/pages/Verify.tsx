@@ -502,7 +502,7 @@ const Verify = () => {
                 <CardTitle>Supply Chain Timeline</CardTitle>
                 <CardDescription>
                   {isContractBatch
-                    ? `${(batch as ContractBatch).events?.length || 0} events recorded on blockchain`
+                    ? `${((batch as any).events as any[])?.length || 0} events recorded on blockchain`
                     : `${(batch as DemoBatch).events?.length || 0} events recorded`}
                 </CardDescription>
               </CardHeader>

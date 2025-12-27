@@ -165,7 +165,7 @@ export default function IntegrityCheck() {
     }
 
     // Call backend analyzer when not in demo mode
-    const API_BASE = import.meta.env.VITE_BACKEND_URL || "/api";
+    const API_BASE = (import.meta.env.VITE_BACKEND_URL as string) || "/api";
     fetch(`${API_BASE}/analyze`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

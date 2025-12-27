@@ -93,7 +93,7 @@ export default function LogEvent(): JSX.Element {
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
 
-  const JWT = import.meta.env.VITE_PINATA_JWT;
+  const JWT = import.meta.env.VITE_PINATA_JWT as string;
 
   const handlePinataUpload = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
@@ -130,7 +130,7 @@ export default function LogEvent(): JSX.Element {
         const afterImageBase64 = reader.result as string;
         
         // Call integrity check API (same as IntegrityCheck.tsx)
-        const API_BASE = import.meta.env.VITE_BACKEND_URL || "/api";
+        const API_BASE = (import.meta.env.VITE_BACKEND_URL as string) || "/api";
         const response = await fetch(`${API_BASE}/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
