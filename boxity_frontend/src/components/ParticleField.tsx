@@ -1,7 +1,7 @@
-import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { Points, PointMaterial } from '@react-three/drei';
-import * as THREE from 'three';
+import { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { Points, PointMaterial } from "@react-three/drei";
+import * as THREE from "three";
 
 function Particles() {
   const ref = useRef<THREE.Points>(null!);
@@ -10,8 +10,8 @@ function Particles() {
       position: [
         (Math.random() - 0.5) * 20,
         (Math.random() - 0.5) * 20,
-        (Math.random() - 0.5) * 20
-      ] as [number, number, number]
+        (Math.random() - 0.5) * 20,
+      ] as [number, number, number],
     }));
     return temp;
   }, []);
@@ -23,12 +23,19 @@ function Particles() {
     }
   });
 
+  const positionsArray = new Float32Array(particles.flatMap((p) => p.position));
+
   return (
-    <Points ref={ref} positions={particles.map(p => p.position).flat()} stride={3} frustumCulled={false}>
+    <Points
+      ref={ref}
+      positions={positionsArray}
+      stride={3}
+      frustumCulled={false}
+    >
       <PointMaterial
         transparent
         color="#5227ff"
-        size={0.05}
+        size={0.02}
         sizeAttenuation={true}
         depthWrite={false}
       />
