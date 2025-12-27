@@ -35,7 +35,7 @@ function Particles() {
       <PointMaterial
         transparent
         color="#5227ff"
-        size={0.05}
+        size={0.02}
         sizeAttenuation={true}
         depthWrite={false}
       />
