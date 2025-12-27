@@ -49,12 +49,25 @@ export class Web3Service {
       // Request account access
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       
+      // Create provider
       this.provider = new ethers.BrowserProvider(window.ethereum);
+      
+      // Get signer
       this.signer = await this.provider.getSigner();
       
-      // Initialize contract
-      this.contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, this.signer);
+      // Ensure contract address is a valid checksummed address (prevents ENS resolution)
+      let contractAddress: string;
+      try {
+        contractAddress = ethers.getAddress(CONTRACT_ADDRESS);
+      } catch {
+        // If getAddress fails, use the address as-is (shouldn't happen with valid address)
+        contractAddress = CONTRACT_ADDRESS;
+      }
       
+      // Initialize contract with explicit hex address (no ENS resolution)
+      this.contract = new ethers.Contract(contractAddress, CONTRACT_ABI, this.signer);
+      
+      // Get address directly without ENS resolution
       const address = await this.signer.getAddress();
       
       // Check if we're on the correct network
@@ -120,7 +133,11 @@ export class Web3Service {
 
   async isUserAuthorized(address: string): Promise<boolean> {
     if (!this.contract) throw new Error('Contract not initialized');
-    return await this.contract.isUserAuthorized(address);
+    // Ensure address is a valid hex address (not ENS) to prevent resolution errors
+    const normalizedAddress = ethers.isAddress(address) 
+      ? ethers.getAddress(address) 
+      : address;
+    return await this.contract.isUserAuthorized(normalizedAddress);
   }
 
   // Contract Functions

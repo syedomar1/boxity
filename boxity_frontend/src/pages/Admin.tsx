@@ -161,7 +161,7 @@ const Admin = () => {
         finalBatchId,
         productName,
         sku || "",
-        connectedAddress, // <-- Use the actual wallet address
+        "Your Company",
         baselineImage1 || "/demo/placeholder.jpg",
         baselineImage2 || "/demo/placeholder.jpg"
       );

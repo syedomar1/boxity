@@ -1,5 +1,5 @@
 // Contract configuration for SupplyChainTrust
-export const CONTRACT_ADDRESS = "00xa33f3d2701A2c5AEC08dff457ABF1967330c7ec6"; // Replace with your deployed contract address
+export const CONTRACT_ADDRESS = "0xa33f3d2701A2c5AEC08dff457ABF1967330c7ec6"; // Replace with your deployed contract address
 
 export const CONTRACT_ABI = [
 	{
