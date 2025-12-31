@@ -18,6 +18,8 @@ import Login from "./pages/Login";
 import Login2 from "./pages/Login2";
 import { AuthCallback } from "./components/AuthCallback";
 import { InsForgeAuthCallback } from "./components/InsForgeAuthCallback";
+import { InsForgeProtectedRoute } from "@/components/InsForgeProtectedRoute";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,14 @@ const AppRoutes = () => {
         <Route path="/callback" element={<AuthCallback />} />
         <Route path="/login2/callback" element={<InsForgeAuthCallback />} />
         <Route path="/" element={<Index />} />
+        <Route
+          path="/chat"
+          element={
+            <InsForgeProtectedRoute>
+              <Chat />
+            </InsForgeProtectedRoute>
+          }
+        />
         <Route
           path="/admin"
           element={

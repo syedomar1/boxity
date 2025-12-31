@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { insforge, INSFORGE_CONFIG } from '@/lib/insforge';
 
 interface InsForgeUser {
@@ -28,6 +28,7 @@ const InsForgeAuthContext = createContext<InsForgeAuthContextType | undefined>(u
 export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<InsForgeUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const authStateVersionRef = useRef(0);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -35,32 +36,59 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkSession = async () => {
+    const versionAtStart = authStateVersionRef.current;
     try {
       setIsLoading(true);
-      
-      // Try to get current user (InsForge SDK method)
-      // The SDK should automatically handle session from stored tokens
+
+      // Prefer local session (no API call). This avoids redirect loops where
+      // getCurrentUser() can briefly fail right after login and clears state.
+      const { data: sessionData, error: sessionError } = await insforge.auth.getCurrentSession();
+
+      if (sessionError) {
+        console.log('Session check error:', sessionError);
+      }
+
+      if (sessionData?.session?.user) {
+        const u = sessionData.session.user;
+        if (authStateVersionRef.current === versionAtStart) {
+          setUser({
+            id: u.id,
+            email: u.email || '',
+            profile: u.profile || (u as any).metadata || {},
+          });
+        }
+        return;
+      }
+
+      // Fallback: attempt to fetch user from API if needed.
       const { data, error } = await insforge.auth.getCurrentUser();
-      
+
       if (error) {
         console.log('No session found:', error);
-        setUser(null);
-        setIsLoading(false);
+        if (authStateVersionRef.current === versionAtStart) {
+          setUser(null);
+        }
         return;
       }
 
       if (data?.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          profile: data.user.profile || data.user.metadata || {},
-        });
+        if (authStateVersionRef.current === versionAtStart) {
+          setUser({
+            id: data.user.id,
+            email: data.user.email || '',
+            profile: data.user.profile || (data.user as any).metadata || {},
+          });
+        }
       } else {
-        setUser(null);
+        if (authStateVersionRef.current === versionAtStart) {
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Error checking session:', error);
-      setUser(null);
+      if (authStateVersionRef.current === versionAtStart) {
+        setUser(null);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,14 +105,19 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
         return { error };
       }
 
-      if (data?.user) {
+      const { data: sessionData } = await insforge.auth.getCurrentSession();
+      const sessionUser = sessionData?.session?.user;
+      const resolvedUser = sessionUser || data?.user;
+
+      if (resolvedUser) {
+        authStateVersionRef.current += 1;
         setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          profile: data.user.profile || data.user.metadata || {},
+          id: resolvedUser.id,
+          email: resolvedUser.email || '',
+          profile: resolvedUser.profile || (resolvedUser as any).metadata || {},
         });
-        // Re-check session after sign in
-        await checkSession();
+      } else {
+        return { error: new Error('Sign in succeeded but no user session was established') };
       }
 
       return { error: null };
@@ -105,14 +138,19 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
         return { error };
       }
 
-      if (data?.user) {
+      const { data: sessionData } = await insforge.auth.getCurrentSession();
+      const sessionUser = sessionData?.session?.user;
+      const resolvedUser = sessionUser || data?.user;
+
+      if (resolvedUser) {
+        authStateVersionRef.current += 1;
         setUser({
-          id: data.user.id,
-          email: data.user.email || '',
-          profile: data.user.profile || data.user.metadata || {},
+          id: resolvedUser.id,
+          email: resolvedUser.email || '',
+          profile: resolvedUser.profile || (resolvedUser as any).metadata || {},
         });
-        // Re-check session after sign up
-        await checkSession();
+      } else {
+        return { error: new Error('Sign up succeeded but no user session was established') };
       }
 
       return { error: null };
@@ -124,16 +162,16 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithOAuth = async (provider: 'google' | 'github') => {
     try {
       const redirectUrl = `${window.location.origin}/login2/callback`;
-      
+
       console.log('Initiating OAuth for:', provider);
       console.log('Redirect URL:', redirectUrl);
-      
+
       // Method 1: Call InsForge API directly to get OAuth URL
       // The API returns: {"authUrl": "https://accounts.google.com/..."}
       try {
         const apiUrl = `${INSFORGE_CONFIG.baseUrl}/api/auth/oauth/${provider}?redirect_uri=${encodeURIComponent(redirectUrl)}`;
         console.log('Calling InsForge OAuth API:', apiUrl);
-        
+
         const response = await fetch(apiUrl, {
           method: 'GET',
           headers: {
@@ -145,7 +183,7 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
         if (response.ok) {
           const data = await response.json();
           console.log('OAuth API response:', data);
-          
+
           // Extract authUrl from response
           if (data.authUrl) {
             console.log('Found authUrl, redirecting to:', data.authUrl);
@@ -175,15 +213,15 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
           provider,
           redirectTo: redirectUrl,
         });
-        
+
         console.log('SDK result:', result);
-        
+
         if (result?.data?.url) {
           console.log('Redirecting to (SDK url):', result.data.url);
           window.location.href = result.data.url;
           return;
         }
-        
+
         // Check if data is a string URL
         const dataUrl = result?.data as any;
         if (dataUrl && typeof dataUrl === 'string' && dataUrl.startsWith('http')) {
@@ -191,7 +229,7 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
           window.location.href = dataUrl;
           return;
         }
-        
+
         // Check for authUrl in response (if API returns it)
         if (dataUrl?.authUrl) {
           console.log('Redirecting to (authUrl):', dataUrl.authUrl);
@@ -204,7 +242,7 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
 
       // If all methods fail, throw error
       throw new Error('Failed to get OAuth URL from InsForge');
-      
+
     } catch (error: any) {
       console.error('OAuth sign in failed:', error);
       throw new Error(`Failed to initiate ${provider} login: ${error.message || 'Unknown error'}`);
@@ -214,6 +252,7 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await insforge.auth.signOut();
+      authStateVersionRef.current += 1;
       setUser(null);
     } catch (error) {
       console.error('Sign out failed:', error);
@@ -221,8 +260,7 @@ export const InsForgeAuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getSession = async () => {
-    // Get current user which includes session info
-    return await insforge.auth.getCurrentUser();
+    return await insforge.auth.getCurrentSession();
   };
 
   return (

@@ -86,21 +86,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Store selected role for passwordless users
     const selectedRole = localStorage.getItem("boxity_selected_role");
     
+    // Use Auth0 passwordless email connection
+    // This will redirect to Auth0's passwordless page where user enters email
+    // Auth0 will send OTP/magic link via email
     await loginWithRedirect({
       authorizationParams: {
         connection: 'email', // Auth0 passwordless email connection
-        login_hint: email,
+        login_hint: email, // Pre-fill email if provided
         ...(AUTH0_AUDIENCE && { audience: AUTH0_AUDIENCE }),
         scope: 'openid profile email offline_access',
         ...(isSignup && { screen_hint: 'signup' }),
-        // Pass role as a parameter that Auth0 Action can read
-        ...(selectedRole && { 
-          // Store in appState so Auth0 Action can access it
-        }),
       },
       appState: {
         returnTo: window.location.origin,
-        selectedRole: selectedRole, // Pass role to Auth0
+        selectedRole: selectedRole, // Pass role to Auth0 Action
       },
     });
   };

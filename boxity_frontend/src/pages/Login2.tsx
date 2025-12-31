@@ -12,6 +12,7 @@ const Login2 = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { signIn, signUp, signInWithOAuth, isAuthenticated, isLoading } = useInsForgeAuth();
+  const returnTo = (location.state as any)?.returnTo as string | undefined;
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,9 +30,9 @@ const Login2 = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      navigate("/", { replace: true });
+      navigate(returnTo || "/", { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, returnTo]);
 
   if (isAuthenticated && !isLoading) {
     return null;
@@ -52,15 +53,11 @@ const Login2 = () => {
         const { error } = await signUp(email, password);
         if (error) {
           setErrorMessage(error.message || "Sign up failed. Please try again.");
-        } else {
-          navigate("/", { replace: true });
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
           setErrorMessage(error.message || "Sign in failed. Please check your credentials.");
-        } else {
-          navigate("/", { replace: true });
         }
       }
     } catch (error: any) {

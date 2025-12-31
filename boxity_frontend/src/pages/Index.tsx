@@ -23,6 +23,7 @@ import FloatingElements from "@/components/FloatingElements";
 import GradientBackground from "@/components/GradientBackground";
 import AnimatedText, { TypewriterText } from "@/components/AnimatedText";
 import InteractiveCard from "@/components/InteractiveCard";
+import FloatingChatWidget from "@/components/FloatingChatWidget";
 import { useState, useRef } from "react";
 
 /**
@@ -458,6 +459,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <FloatingChatWidget />
     </div>
   );
 };
